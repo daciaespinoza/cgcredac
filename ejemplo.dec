@@ -1,0 +1,94 @@
+clase Empleado {
+    publico atributo nombre como texto::
+    privado atributo salario_base como decimal::
+
+    publico metodo asignar_datos(texto n, decimal s) {
+        este.nombre igual a n::
+        este.salario_base igual a s::
+    }
+
+    publico metodo mostrar_info() {
+        mostrar "Empleado: ", este.nombre, " - Pago total: ", "10000"::
+    }
+}
+
+funcion calcular(entero n1, entero n2)
+{
+    crear como entero x igual a n1 * n2::
+}
+
+comenzar
+
+    crear como Empleado emp1::
+    mostrar emp1.nombre::
+
+    emp1.nombre igual a "Magrio"::
+
+    emp1.asignar_datos("Juana", 40000)::
+
+    calcular(2, 4)::
+
+    i++::
+
+    constante como entero XSSS igual a 30::
+    crear como entero x igual a 30::
+
+    crear como entero b::
+
+    crear como entero l[2], ooo, p igual a 5, v[4] igual a [1,2,3,4]::
+
+    crear como entero e[2] igual a [1,2]::
+    
+    mostrar "Ingrese x"::
+
+    leer x::
+
+    mientras (noes verdadero)
+    {
+        mostrar "Xd"::
+    }
+
+    si (x)
+    {
+        mostrar "1"::
+        mostrar "2"::
+        mostrar "3"::
+        mostrar "4"::
+    } sino {
+        mostrar "5"::
+        mostrar "6"::
+        mostrar "7"::
+        mostrar "8"::
+        mostrar "9"::
+    }   
+
+    segun (x) {
+        caso 1:
+            mostrar(x)::
+            romper::
+        caso 2:
+            mostrar(x)::
+            romper::
+        caso otro:
+            mostrar(x)::
+            romper::
+    }
+
+    x igual a 69::
+
+    crear como entero j igual a 1::
+
+    mientras (j menor que 2) {
+        para (crear i como entero igual a 1 :: i menor o igual que 3 :: i igual a i + 1) {
+            mostrar "j=", j, " i=", i::
+        }
+        j igual a j + 1::
+    }
+
+    hacer {
+        mostrar "Xd"::
+    } mientras(1 mayor que 2 mayor que 3 mayor que 4)::
+
+    v[4] igual a 1 + 2 * 3 / 6::
+
+terminar

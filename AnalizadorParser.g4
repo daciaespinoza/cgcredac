@@ -1,55 +1,50 @@
 grammar AnalizadorParser;
 
-options 
-{
-    tokenVocab = AnalizadorLexer;
-}
-
 // Regla principal que define la estructura base de CREDAC.
 programa:
-    clases_opt 'comenzar' instrucciones 'terminar'
+    (clase | funcion)* 'comenzar' sentencia* 'terminar'
     ;
 
-// Conjunto de clases definidas antes del programa principal.
-clases_opt:
-    clase*
+// Reglas para las diferentes sentencia* ejecutables de CREDAC.
+sentencia:
+    'mostrar' lista_mostrar '::'
+    | 'leer' ID '::'
+    | 'mientras' '(' expresion ')' '{' sentencia* '}'
+    | sentencia_si
+    | ID 'igual' 'a' expresion'::'
+    | para_sentencia
+    | segun_sentencia
+    | hacer_mientras_sentencia
+    | ID '[' expresion ']' 'igual' 'a' expresion '::'
+    | 'retornar' expresion '::'
+    | acceso_objeto ('igual' 'a' expresion)? '::'
+    | llamada_metodo '::'
+    | llamada_funcion '::'
+    | ID ('++' | '--') '::'
+    | declaracion
     ;
 
-// Lista de instrucciones del programa principal.
-instrucciones:
-    instruccion*
-    ;
-
-instruccion:
-    declaracion
-    | sentencia
-    ;
+sentencia_si:
+    'si' '(' expresion ')' '{' siBlock=sentencias'}' #siOnly
+    | 'si' '(' expresion ')' '{' siBlock=sentencias '}' 'sino' '{' sinoBlock=sentencias '}' #sinoOnly
+;
+sentencias: sentencia+;
 
 // Reglas para declarar variables, constantes o arreglos.
 declaracion:
-    'crear' lista_ids 'como' tipo ('igual' 'a')? expresion '::'
-    | 'crear' lista_ids 'como' tipo '::'
-    | 'crear' lista_ids 'como' tipo ('igual' 'a')? '[' lista_expresiones ']' '::'
-    | 'constante' CONSTANTEID 'como' tipo ('igual' 'a')? expresion '::'
+    'crear' 'como' tipo id_item (',' id_item)*  '::'
+    | 'constante' 'como' tipo CONSTANTEID 'igual' 'a' expresion '::'
     ;
-
-// Lista de identificadores que pueden estar separados por comas y tener asignaciones o índices.
-lista_ids:
-    id_item
-    | lista_ids ',' id_item
-    ;
-
+    
 id_item:
     ID
-    | ID ('igual' 'a')? expresion
+    | ID 'igual' 'a' expresion
     | ID '[' expresion ']'
-    | ID '[' expresion ']' ('igual' 'a')? expresion
-    | ID '[' ']'
+    | ID '[' expresion ']' 'igual' 'a' '[' lista_expresiones ']'
     ;
 
 lista_expresiones:
-    expresion
-    | lista_expresiones ',' expresion
+    expresion (',' expresion)*
     ;
 
 // Tipos válidos que se pueden usar en variables, parámetros o funciones.
@@ -59,29 +54,7 @@ tipo:
     | 'doble'
     | 'texto'
     | 'logico'
-    | 'nulo'
     | ID
-    ;
-
-// Reglas para las diferentes instrucciones ejecutables de CREDAC.
-sentencia:
-    'mostrar' lista_mostrar '::'
-    | 'leer' ID '::'
-    | 'mientras' '(' expresion ')' '{' instrucciones '}'
-    | 'si' '(' expresion ')' '{' instrucciones '}'
-    | 'si' '(' expresion ')' '{' instrucciones '}' 'sino' '{' instrucciones '}'
-    | ID ('igual' 'a')? expresion '::'
-    | para_sentencia
-    | segun_sentencia
-    | hacer_mientras_sentencia
-    | ID '[' expresion ']' ('igual' 'a')? expresion '::'
-    | funcion
-    | 'retornar' expresion '::'
-    | acceso_objeto ('igual' 'a')? expresion '::'
-    | llamada_metodo '::'
-    | llamada_funcion '::'
-    | ID '++' '::'
-    | ID '--' '::'
     ;
 
 lista_mostrar:
@@ -92,17 +65,16 @@ lista_mostrar:
 // Reglas para construir cualquier tipo de expresión, aritmética, lógica o de acceso.
 expresion:
     NUMENTERO
+    | 'falso'
+    | 'verdadero'
     | NUMDECIMAL
     | ID
     | TEXTO
-    | 'falso'
-    | 'verdadero'
-    | ID '[' expresion ']'
     | expresion ('igual' 'a' | 'mayor' 'que' | 'menor' 'que' | 'mayor' 'o' 'igual' 'que' | 'menor' 'o' 'igual' 'que' | 'igual' 'que' | 
-    'noes' 'igual' 'a' | 'yy' | 'oo' | '+' | '-' | '*' | '/') expresion
+    NOES 'igual' 'a' | 'yy' | 'oo' | '+' | '-' | '*' | '/') expresion
+    | ID '[' expresion ']'
     | '(' expresion ')'
-    | 'noes' '(' expresion ')'
-    | 'noes' ID
+    | NOES expresion
     | acceso_objeto
     | llamada_metodo
     | llamada_funcion
@@ -116,46 +88,44 @@ lista_expresiones_opt:
 
 // Estructura del ciclo para
 para_sentencia:
-    'para' '(' inicializar_expr '::' expresion '::' incre_decre ')' '{' instrucciones '}'
+    'para' '(' inicializar_expr '::' expresion '::' incre_decre ')' '{' sentencia* '}'
     ;
 
 inicializar_expr:
-    'crear' ID 'como' tipo ('igual' 'a')? expresion
-    | ID ('igual' 'a')? expresion
+    ID ('igual' 'a' expresion)? 
+    | 'crear' ID 'como' tipo 'igual' 'a' expresion
     ;
 
 incre_decre:
-    ID ('igual' 'a')? expresion
+    ID ('igual' 'a' expresion)? 
     | ID '++'
     | ID '--'
     ;
 
+
 // Estructura del ciclo según, que permite múltiples casos.
 segun_sentencia:
-    'segun' expresion '{' lista_casos caso_defecto '}'
+    'segun' expresion '{' caso* caso_defecto '}'
     ;
-
-lista_casos:
-    caso*
-    ;
-
 caso:
-    'caso' expresion ':' instrucciones 'romper' '::'
+    'caso' expresion ':' sentencia* 'romper' '::'
     ;
-
 caso_defecto:
      
-    | 'caso' 'otro' ':' instrucciones 'romper' '::'
+    | 'caso' 'otro' ':' sentencia* 'romper' '::'
     ;
+
+
+
 
 // Estructura del ciclo hacer-mientras, que ejecuta al menos una vez.
 hacer_mientras_sentencia:
-    'hacer' '{' instrucciones '}' 'mientras' '(' expresion ')' '::'
+    'hacer' '{' sentencia* '}' 'mientras' '(' expresion ')' '::'
     ;
 
 // Definición de funciones, incluyendo parámetros y tipos de retorno.
 funcion:
-    'funcion' ID '(' parametros_opt ')' 'retornar' tipo '{' instrucciones '}'
+    'funcion' ID '(' parametros_opt ')' tipo_retorno '{' sentencia* '}'
     ;
 
 parametros_opt:
@@ -179,25 +149,13 @@ llamada_funcion:
     ID '(' lista_expresiones_opt ')'
     ;
 
-// Definición de clases, incluyendo herencia y miembros.
-clase:
-    'clase' ID '{' miembros '}'
-    | 'clase' ID 'hereda' ID '{' miembros '}'
-    ;
-
-miembros:
-    miembro*
-    ;
+// Definición de clases, incluyendo herencia y miembro+.
+clase: 'clase' ID '{' miembro+ '}';
 
 miembro:
-    visibilidad 'atributo' id_con_sin_arreglo 'como' tipo '::'
-    | visibilidad 'atributo' id_con_sin_arreglo 'como' tipo ('igual' 'a') expresion '::'
-    | visibilidad 'metodo' ID '(' parametros_opt ')' metodo_retorno '{' instrucciones '}'
-    ;
-
-id_con_sin_arreglo:
-    ID                     
-    | ID '[' expresion ']'    
+    visibilidad 'atributo' ID 'como' tipo '::'
+    | visibilidad 'atributo' ID 'como' tipo ('igual' 'a') expresion '::'
+    | visibilidad 'metodo' ID '(' parametros_opt ')' tipo_retorno '{' sentencia* '}'
     ;
 
 visibilidad:
@@ -205,8 +163,8 @@ visibilidad:
     | 'privado'
     ;
 
-metodo_retorno:
-     
+tipo_retorno:
+    /* vacio */
     | 'retornar' tipo
     ;
 
@@ -225,6 +183,7 @@ llamada_metodo:
     ;
 
 // Literales e identificadores
+NOES: 'noes';
 NUMENTERO: [0-9]+;
 NUMDECIMAL: [0-9]+ ('.' [0-9]+)?;
 TEXTO: '"' (~["\r\n])* '"';

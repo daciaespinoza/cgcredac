@@ -25,7 +25,6 @@ OTRO: 'otro';
 CLASE: 'clase';
 ATRIBUTO: 'atributo';
 METODO: 'metodo';
-HEREDA: 'hereda';
 ESTE: 'este';
 PUBLICO: 'publico';
 PRIVADO: 'privado';
@@ -36,7 +35,6 @@ TIPODECIMAL: 'decimal';
 TIPODOBLE: 'doble';
 TIPOTEXTO: 'texto';
 TIPOLOGICO: 'logico';
-TIPONULO: 'nulo';
 
 // Valores booleanos
 BOOLEANOVERDADERO: 'verdadero';

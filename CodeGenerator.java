@@ -12,7 +12,7 @@ public class CodeGenerator extends AnalizadorParserBaseVisitor<String> {
             case "entero":
                 return "int";
             case "decimal":
-                return "float";
+                return "double";
             case "doble":
                 return "double";
             case "texto":
@@ -27,7 +27,7 @@ public class CodeGenerator extends AnalizadorParserBaseVisitor<String> {
 
     @Override
     public String visitPrograma(AnalizadorParserParser.ProgramaContext ctx) {
-        
+
         // Procesar clases
         for (var claseCtx : ctx.clase()) {
             classDeclarations.append(visit(claseCtx)).append("\n");
@@ -43,7 +43,7 @@ public class CodeGenerator extends AnalizadorParserBaseVisitor<String> {
         for (var sentenciaCtx : ctx.sentencia()) {
             mainCode.append(visit(sentenciaCtx)).append("\n");
         }
-        mainCode.append("return 0;\n}\n");
+        mainCode.append("   return 0;\n}\n");
 
         // Combinar todo
         output.append("#include <iostream>\n");
@@ -67,29 +67,35 @@ public class CodeGenerator extends AnalizadorParserBaseVisitor<String> {
             if (acceso.startsWith("este")) {
                 return acceso + " = " + expr + ";";
             }
-            
+
             return acceso + " = " + expr + ";";
         }
 
         // Mostrar una sentencia
         if (ctx.getChild(0).getText().equals("mostrar")) {
-            return "   cout << " + visit(ctx.lista_mostrar()) + " << endl;";
+            return visit(ctx.lista_mostrar());
         }
 
         // Leer sentencia
         if (ctx.getChild(0).getText().equals("leer")) {
-            return "   cin >> " + ctx.ID().getText() + ";";
-        }
+            String variable = "";
 
+            if (ctx.ID() != null) {
+                variable = ctx.ID().getText();
+            } else if (ctx.acceso_objeto() != null) {
+                variable = visit(ctx.acceso_objeto());
+            }
+
+            return "   cin >> " + variable + ";";
+        }
         // Incremento y Decremento
         if (ctx.getChildCount() > 1)
         {
             if (ctx.getChild(1).getText().equals("++") || ctx.getChild(1).getText().equals("--")) {
-                return ctx.ID().getText() + ctx.getChild(1).getText() + ";";
+                return "   " + ctx.ID().getText() + ctx.getChild(1).getText() + ";";
             }
         }
         
-
         // Declaracion
         if (ctx.declaracion() != null) {
             return visit(ctx.declaracion());
@@ -98,10 +104,14 @@ public class CodeGenerator extends AnalizadorParserBaseVisitor<String> {
         if (ctx.getChild(0).getText().equals("mientras")) {
             StringBuilder sb = new StringBuilder();
             sb.append("   while (" + visit(ctx.expresion(0)) + ") {\n");
-            for (AnalizadorParserParser.SentenciaContext stmt : ctx.sentencia()) {
-                sb.append(visit(stmt)).append("\n");
+
+            StringBuilder body = new StringBuilder();
+            for (var stmt : ctx.sentencia()) {
+                body.append("     ").append(visit(stmt)).append("\n");
             }
-            sb.append("}");
+
+            sb.append(body);
+            sb.append("   }");
             return sb.toString();
         }
 
@@ -113,7 +123,7 @@ public class CodeGenerator extends AnalizadorParserBaseVisitor<String> {
         if (ctx.ID() != null && ctx.getChild(1).getText().equals("igual")) {
             String variable = ctx.ID().getText();
             String expr = visit(ctx.expresion(0));
-            return variable + " = " + expr + ";";
+            return "   " + variable + " = " + expr + ";";
         }
 
         // Para sentencia
@@ -126,14 +136,14 @@ public class CodeGenerator extends AnalizadorParserBaseVisitor<String> {
             return visit(ctx.segun_sentencia());
         }
 
-        // Según sentencia  
+        // Llamada a método
         if (ctx.llamada_metodo() != null) {
             return visit(ctx.llamada_metodo()) + ";";
         }
 
-        // Según sentencia  
+        // Llamada a función 
         if (ctx.llamada_funcion() != null) {
-            return visit(ctx.llamada_funcion()) + ";";
+            return "   " + visit(ctx.llamada_funcion()) + ";";
         }
 
         // Hacer mientras sentencia
@@ -147,7 +157,7 @@ public class CodeGenerator extends AnalizadorParserBaseVisitor<String> {
             String variable = ctx.ID().getText();
             String indice = visit(ctx.expresion(0));
             String valor = visit(ctx.expresion(1));
-            return variable + "[" + indice + "] = " + valor + ";";
+            return "   " + variable + "[" + indice + "] = " + valor + ";";
         }
 
         if (ctx.expresion().size() == 2)
@@ -157,7 +167,7 @@ public class CodeGenerator extends AnalizadorParserBaseVisitor<String> {
 
         // Sentencia Retornar  
         if (ctx.getChild(0).getText().equals("retornar")) {
-            return "return" + visit(ctx.expresion(0)) + ";";
+            return "return " + visit(ctx.expresion(0)) + ";";
         }
 
         return "";
@@ -166,114 +176,152 @@ public class CodeGenerator extends AnalizadorParserBaseVisitor<String> {
     @Override
     public String visitClase(AnalizadorParserParser.ClaseContext ctx) {
         StringBuilder claseCode = new StringBuilder();
-        
         String nombreClase = ctx.ID().getText();
-        
-        claseCode.append("class ").append(nombreClase).append(" {\n");
 
-        
-        // Procesar miembros de la clase
+        claseCode.append("class ").append(nombreClase).append(" {\n\n");
+
         StringBuilder publicMembers = new StringBuilder();
         StringBuilder privateMembers = new StringBuilder();
-        
-        // Procesar cada miembro y separar por visibilidad
+
         if (ctx.miembro() != null) {
             for (AnalizadorParserParser.MiembroContext miembroCtx : ctx.miembro()) {
                 String visibilidad = miembroCtx.visibilidad().getText();
                 String miembroCode = visit(miembroCtx);
-                
+
+                // Indentación manual
+                String miembroIndentado = indentar(miembroCode, "   ");
+
                 if ("privado".equals(visibilidad)) {
-                    privateMembers.append("    ").append(miembroCode).append("\n");
+                    privateMembers.append(miembroIndentado).append("\n");
                 } else if ("publico".equals(visibilidad)) {
-                    publicMembers.append("    ").append(miembroCode).append("\n");
+                    publicMembers.append(miembroIndentado).append("\n");
                 }
             }
         }
-        
+
         // Agregar miembros privados
         if (privateMembers.length() > 0) {
-            claseCode.append(privateMembers.toString());
+            claseCode.append(privateMembers.toString()).append("\n");
         }
-        
+
         // Agregar miembros públicos
-        claseCode.append("\n    public:\n");
-        // Agregar constructor por defecto
-        claseCode.append("    ").append(nombreClase).append("() {}\n");
+        claseCode.append("   public:\n");
+        claseCode.append("     ").append(nombreClase).append("() {}\n");
         claseCode.append(publicMembers.toString());
-        
         claseCode.append("};\n");
-        
+
         return claseCode.toString();
     }
-    
+
+
+    private String indentar(String texto, String prefijo) {
+        StringBuilder resultado = new StringBuilder();
+        String[] lineas = texto.split("\n");
+        for (int i = 0; i < lineas.length; i++) {
+            resultado.append(prefijo).append(lineas[i]);
+            if (i < lineas.length - 1) {
+                resultado.append("\n");
+            }
+        }
+        return resultado.toString();
+    }
+
     @Override
     public String visitMiembro(AnalizadorParserParser.MiembroContext ctx) {
         String visibilidad = ctx.visibilidad().getText().equals("publico") ? "public:" : "private:";
-        
+
         if (ctx.getChild(1).getText().equals("atributo")) {
             String tipo = visit(ctx.tipo());
             String nombre = ctx.ID().getText();
-            return visibilidad + "\n    " + tipo + " " + nombre + ";";
+            String declaracion = tipo + " " + nombre;
+
+            // Si hay expresión, significa que es la segunda regla con inicialización
+            if (ctx.expresion() != null) {
+                String valorInicial = visit(ctx.expresion());
+                declaracion += " = " + valorInicial;
+            }
+
+            return visibilidad + "\n " + " " + declaracion + ";";
         }
 
         if (ctx.getChild(1).getText().equals("metodo")) {
             String nombreMetodo = ctx.ID().getText();
             String parametros = visit(ctx.parametros_opt());
-            String tipoRetorno = ctx.tipo_retorno() != null && ctx.tipo_retorno().tipo() != null
+            String tipoRetorno = (ctx.tipo_retorno() != null && ctx.tipo_retorno().tipo() != null)
                                 ? visit(ctx.tipo_retorno().tipo())
                                 : "void";
 
             StringBuilder body = new StringBuilder();
             for (var stmt : ctx.sentencia()) {
-                body.append("        ").append(visit(stmt)).append("\n");
+                body.append("   ").append(visit(stmt)).append("\n");
             }
 
-            return visibilidad + "\n    " + tipoRetorno + " " + nombreMetodo + "(" + parametros + ") {\n" + body + "    }";
+            return visibilidad + "\n " + tipoRetorno + " " + nombreMetodo + "(" + parametros + ") {\n" + body + " }";
         }
 
         return "";
     }
 
-    
+    @Override
+    public String visitLista_mostrar(AnalizadorParserParser.Lista_mostrarContext ctx) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("   cout << ");
+
+        // Recorrer todas las expresiones en la lista de mostrar
+        java.util.List<AnalizadorParserParser.ExpresionContext> expresiones = ctx.expresion();
+        
+        for (int i = 0; i < expresiones.size(); i++) {
+            sb.append(visit(expresiones.get(i)));
+            
+            if (i < expresiones.size() - 1) {
+                sb.append(" << ");
+            }
+        }
+        
+        sb.append(" << endl;");
+        return sb.toString();
+    }
 
     @Override
     public String visitSiOnly(AnalizadorParserParser.SiOnlyContext ctx) {
         StringBuilder sb = new StringBuilder();
-        
-        // Generar la condición del if
-        sb.append("if (").append(visit(ctx.expresion())).append(") {\n");
-        
-        // Generar el bloque del if
+
+        sb.append("   if (").append(visit(ctx.expresion())).append(") {\n");
+
         for (AnalizadorParserParser.SentenciaContext stmt : ctx.siBlock.sentencia()) {
             String stmtCode = visit(stmt);
             if (stmtCode != null && !stmtCode.trim().isEmpty()) {
-                sb.append("        ").append(stmtCode);
+                sb.append(indentar(stmtCode, "      ")).append("\n"); // 6 espacios
             }
         }
-        sb.append("}");
-        
+
+        sb.append("   }"); // cierre del if
         return sb.toString();
     }
 
     @Override
     public String visitSinoOnly(AnalizadorParserParser.SinoOnlyContext ctx) {
         StringBuilder sb = new StringBuilder();
-        
-        // Generar la condición del if
-        sb.append("if (").append(visit(ctx.expresion())).append(") {\n");
-        
-        // Generar el bloque del if
+
+        sb.append("   if (").append(visit(ctx.expresion())).append(") {\n");
+
         for (AnalizadorParserParser.SentenciaContext stmt : ctx.siBlock.sentencia()) {
-            sb.append(visit(stmt)).append("\n");
+            String stmtCode = visit(stmt);
+            if (stmtCode != null && !stmtCode.trim().isEmpty()) {
+                sb.append(indentar(stmtCode, "      ")).append("\n"); // 6 espacios
+            }
         }
-        sb.append("} else {\n");
-        
-        // Generar el bloque del else (sino)
+
+        sb.append("   } else {\n");
+
         for (AnalizadorParserParser.SentenciaContext stmt : ctx.sinoBlock.sentencia()) {
-            sb.append(visit(stmt)).append("\n");
+            String stmtCode = visit(stmt);
+            if (stmtCode != null && !stmtCode.trim().isEmpty()) {
+                sb.append(indentar(stmtCode, "      ")).append("\n"); // 6 espacios
+            }
         }
-        sb.append("}");
-        
+
+        sb.append("   }"); // cierre del else
         return sb.toString();
     }
 
@@ -310,7 +358,7 @@ public class CodeGenerator extends AnalizadorParserBaseVisitor<String> {
         if (ctx.getText().equals("decimal") || ctx.getText().equals("doble")) return "double";
         if (ctx.getText().equals("texto")) return "string";
         if (ctx.getText().equals("logico")) return "bool";
-        return ctx.getText(); // por si es un tipo personalizado (ID)
+        return ctx.getText(); // tipo personalizado (ID)
     }
 
 
@@ -322,10 +370,9 @@ public class CodeGenerator extends AnalizadorParserBaseVisitor<String> {
             
             // Si es acceso a un miembro de la clase (uso de 'este')
             if (left.equals("este")) {
-                return "this->" + right;
+                return "   this->" + right;
             }
-            
-            return left + "." + right;
+            return "   " + left + "." + right;
         } else if (ctx.getChildCount() == 6) { // ID '.' ID '[' expresion ']' o acceso_objeto '.' ID '[' expresion ']'
             String left = visit(ctx.getChild(0));
             String id = ctx.getChild(2).getText();
@@ -333,17 +380,16 @@ public class CodeGenerator extends AnalizadorParserBaseVisitor<String> {
             
             // Si es acceso a un miembro de la clase (uso de 'este')
             if (left.equals("este")) {
-                return "this->" + id + "[" + index + "]";
+                return "   this->" + id + "[" + index + "]";
             }
-            
-            return left + "." + id + "[" + index + "]";
+            return "   " + left + "." + id + "[" + index + "]";
         } else if (ctx.getChild(0).getText().equals("este")) {
             String id = ctx.getChild(2).getText();
             if (ctx.getChildCount() == 3) {
-                return "this->" + id;
+                return "   this->" + id;
             } else {
                 String index = visit(ctx.getChild(4));
-                return "this->" + id + "[" + index + "]";
+                return "   this->" + id + "[" + index + "]";
             }
         }
         return "";
@@ -356,15 +402,25 @@ public class CodeGenerator extends AnalizadorParserBaseVisitor<String> {
             return "0";
         }
 
-        // Handle simple cases first
+        // Literales y valores logicos
         if (ctx.NUMENTERO() != null) return ctx.NUMENTERO().getText();
         if (ctx.NUMDECIMAL() != null) return ctx.NUMDECIMAL().getText();
-        if (ctx.ID() != null) return ctx.ID().getText();
+        if (ctx.ID() != null) {
+            // Verificar si es acceso a arreglo: ID [ expresion ]
+            if (ctx.getChildCount() == 4 && ctx.getChild(1).getText().equals("[")) {
+                String arreglo = ctx.ID().getText();
+                String indice = visit(ctx.expresion(0));
+                return arreglo + "[" + indice + "]";
+            }
+            // Si no, es solo un ID normal
+            return ctx.ID().getText();
+        }
+        if (ctx.CONSTANTEID() != null) return ctx.CONSTANTEID().getText();
         if (ctx.TEXTO() != null) return ctx.TEXTO().getText();
         if (ctx.getText().equals("verdadero")) return "true";
         if (ctx.getText().equals("falso")) return "false";
 
-        // Handle binary operators
+        // Operadores binarios
         if (ctx.expresion().size() == 2) {
 
             String left = visit(ctx.expresion(0));
@@ -415,25 +471,16 @@ public class CodeGenerator extends AnalizadorParserBaseVisitor<String> {
                 return "(" + left + " || " + right + ")";
             }
 
-            if (ctx.getChild(1).getText().equals("noes"))
-            {
-                return "(" + left + " != " + right + ")";
-            }
-
             return "(" + left + " " + ctx.getChild(1).getText() + " " + right + ")"; 
         }
 
+        // Operador unario "noes" al inicio
         if (ctx.getChild(0).getText().equals("noes"))
         {
             return "!" + visit(ctx.expresion(0));
         }
 
-        // Handle array access
-        if (ctx.getChildCount() == 4 && ctx.getChild(1).getText().equals("[")) {
-            return visit(ctx.expresion(0)) + "[" + visit(ctx.expresion(1)) + "]";
-        }
-
-        // Handle unary operators
+        // Operadores unarios
         if (ctx.getChildCount() == 2 && ctx.expresion().size() == 1) {
             String operator = ctx.getChild(0).getText();
             String expr = visit(ctx.expresion(0));
@@ -442,19 +489,19 @@ public class CodeGenerator extends AnalizadorParserBaseVisitor<String> {
             }
         }
 
-        // Handle parentheses
+        // Expresion en Paréntesis
         if (ctx.getChildCount() == 3 && ctx.getChild(0).getText().equals("(")) {
             return "(" + visit(ctx.expresion(0)) + ")";
         }
 
-        // Handle method/function calls
+        // Llamadas a métodos o funciones
         if (ctx.llamada_metodo() != null) return visit(ctx.llamada_metodo());
         if (ctx.llamada_funcion() != null) return visit(ctx.llamada_funcion());
 
-        // Handle object access
+        // Acceso a objetos
         if (ctx.acceso_objeto() != null) return visit(ctx.acceso_objeto());
 
-        // Handle lists
+        // Expresiones de arreglos literales
         if (ctx.getChildCount() > 2 && ctx.getChild(0).getText().equals("[")) {
             StringBuilder sb = new StringBuilder("[");
             for (int i = 0; i < ctx.expresion().size(); i++) {
@@ -465,7 +512,7 @@ public class CodeGenerator extends AnalizadorParserBaseVisitor<String> {
             return sb.toString();
         }
 
-        // Fallback - return the raw text (this handles cases where the expression is a single identifier)
+        // Si no se reconoce la expresión, devolver el texto original
         return ctx.getText();
     }
 
@@ -484,12 +531,10 @@ public class CodeGenerator extends AnalizadorParserBaseVisitor<String> {
         
         } else {
             // Declaración normal o de arreglo
-            // Recopilar todos los id_items de la lista_ids
             
             List<AnalizadorParserParser.Id_itemContext> items = ctx.id_item();
-            
-
-            code.append(convertirTipo(tipo)).append(" ");
+        
+            code.append("   ").append(convertirTipo(tipo)).append(" "); 
             
             for (AnalizadorParserParser.Id_itemContext item : items) 
             {
@@ -530,7 +575,6 @@ public class CodeGenerator extends AnalizadorParserBaseVisitor<String> {
         String id = ctx.ID().getText();
         
         if (ctx.getChildCount() == 1) {
-            // Solo ID
             return id;
         } else if (ctx.getChildCount() >= 3 && ctx.getChild(1).getText().equals("[")) {
             // ID [ expresion ] o ID [ expresion ] igual a expresion
@@ -546,30 +590,14 @@ public class CodeGenerator extends AnalizadorParserBaseVisitor<String> {
             return id + " = " + visit(ctx.expresion());
         }
         
-        return id; // fallback
+        return id; 
     }
-    
-    // Método auxiliar para recopilar recursivamente todos los id_items
-    // private java.util.List<AnalizadorParserParser.Id_itemContext> getAllIdItems(AnalizadorParserParser.Lista_idsContext ctx) {
-    //     java.util.List<AnalizadorParserParser.Id_itemContext> items = new java.util.ArrayList<>();
-        
-    //     if (ctx.lista_ids() != null) {
-    //         // Caso recursivo: lista_ids ',' id_item
-    //         items.addAll(getAllIdItems(ctx.lista_ids()));
-    //         items.add(ctx.id_item());
-    //     } else {
-    //         // Caso base: solo id_item
-    //         items.add(ctx.id_item());
-    //     }
-        
-    //     return items;
-    // }
 
     @Override
     public String visitPara_sentencia(AnalizadorParserParser.Para_sentenciaContext ctx) {
         StringBuilder sb = new StringBuilder();
         
-        sb.append("for (");
+        sb.append("   for (");
         
         // Inicialización
         sb.append(visit(ctx.inicializar_expr()));
@@ -586,10 +614,10 @@ public class CodeGenerator extends AnalizadorParserBaseVisitor<String> {
         
         // Cuerpo del ciclo
         for (AnalizadorParserParser.SentenciaContext stmt : ctx.sentencia()) {
-            sb.append(visit(stmt)).append("\n");
+            sb.append("     ").append(visit(stmt)).append("\n");
         }
         
-        sb.append("}");
+        sb.append("   }");
         return sb.toString();
     }
 
@@ -641,77 +669,75 @@ public class CodeGenerator extends AnalizadorParserBaseVisitor<String> {
     }
 
     @Override
-public String visitSegun_sentencia(AnalizadorParserParser.Segun_sentenciaContext ctx) {
-    StringBuilder cppCode = new StringBuilder();
-    String condition = visit(ctx.expresion());
-    cppCode.append("switch (").append(condition).append(") {\n");
-    
-    // Procesar todos los casos
-    for (AnalizadorParserParser.CasoContext caso : ctx.caso()) {
-        cppCode.append(visit(caso));
-    }
-    
-    // Procesar caso defecto si existe
-    if (ctx.caso_defecto() != null) {
-        cppCode.append(visit(ctx.caso_defecto()));
-    }
-    
-    cppCode.append("}\n");
-    return cppCode.toString();
-}
+    public String visitSegun_sentencia(AnalizadorParserParser.Segun_sentenciaContext ctx) {
+        StringBuilder switchCode = new StringBuilder();
+        String condition = visit(ctx.expresion());
 
-@Override
-public String visitCaso(AnalizadorParserParser.CasoContext ctx) {
-    StringBuilder cppCode = new StringBuilder();
-    String caseValue = visit(ctx.expresion());
-    cppCode.append("case ").append(caseValue).append(":\n");
-    
-    // Procesar sentencias del caso
-    for (AnalizadorParserParser.SentenciaContext stmt : ctx.sentencia()) {
-        String stmtCode = visit(stmt);
-        if (stmtCode != null && !stmtCode.trim().isEmpty()) {
-            cppCode.append(stmtCode).append("\n");
-        }
-    }
-    
-    cppCode.append("break;\n");
-    return cppCode.toString();
-}
+        switchCode.append("switch (").append(condition).append(") {\n");
 
-@Override
-public String visitCaso_defecto(AnalizadorParserParser.Caso_defectoContext ctx) {
-    // Si está vacío, no hacer nada
-    if (ctx.getChildCount() == 0) {
-        return "";
-    }
-    
-    StringBuilder cppCode = new StringBuilder();
-    cppCode.append("default:\n");
-    
-    // Procesar sentencias del caso defecto
-    for (AnalizadorParserParser.SentenciaContext stmt : ctx.sentencia()) {
-        String stmtCode = visit(stmt);
-        if (stmtCode != null && !stmtCode.trim().isEmpty()) {
-            cppCode.append(stmtCode).append("\n");
+        for (AnalizadorParserParser.CasoContext caso : ctx.caso()) {
+            String casoCode = visit(caso);
+            switchCode.append(indentar(casoCode, "    ")).append("\n"); // 4 espacios
         }
+
+        if (ctx.caso_defecto() != null) {
+            String defectoCode = visit(ctx.caso_defecto());
+            switchCode.append(indentar(defectoCode, "    ")).append("\n");
+        }
+        switchCode.append("}");
+        // return switchCode.toString();
+        return indentar(switchCode.toString(), "   ");
     }
-    
-    cppCode.append("break;\n");
-    return cppCode.toString();
-}
+
+    @Override
+    public String visitCaso(AnalizadorParserParser.CasoContext ctx) {
+        StringBuilder cppCode = new StringBuilder();
+        String caseValue = visit(ctx.expresion());
+        cppCode.append("case ").append(caseValue).append(":\n");
+        
+        for (AnalizadorParserParser.SentenciaContext stmt : ctx.sentencia()) {
+            String stmtCode = visit(stmt);
+            if (stmtCode != null && !stmtCode.trim().isEmpty()) {
+                cppCode.append(stmtCode).append("\n"); // sin indentar aquí
+            }
+        }
+
+        cppCode.append("break;\n"); // sin indentar aquí
+        return cppCode.toString();
+    }
+
+    @Override
+    public String visitCaso_defecto(AnalizadorParserParser.Caso_defectoContext ctx) {
+        if (ctx.getChildCount() == 0) {
+            return "";
+        }
+
+        StringBuilder cppCode = new StringBuilder();
+        cppCode.append("default:\n");
+        
+        for (AnalizadorParserParser.SentenciaContext stmt : ctx.sentencia()) {
+            String stmtCode = visit(stmt);
+            if (stmtCode != null && !stmtCode.trim().isEmpty()) {
+                cppCode.append(stmtCode).append("\n"); // sin indentar aquí
+            }
+        }
+
+        cppCode.append("break;\n"); // sin indentar aquí
+        return cppCode.toString();
+    }
 
     @Override
     public String visitHacer_mientras_sentencia(AnalizadorParserParser.Hacer_mientras_sentenciaContext ctx) {
         StringBuilder sb = new StringBuilder();
         
-        sb.append("do {\n");
+        sb.append("   do {\n");
         
         // Procesar sentencias dentro del do
         for (AnalizadorParserParser.SentenciaContext stmt : ctx.sentencia()) {
-            sb.append(visit(stmt)).append("\n");
+            sb.append("     ").append(visit(stmt)).append("\n");
         }
         
-        sb.append("} while (").append(visit(ctx.expresion())).append(");");
+        sb.append("   } while (").append(visit(ctx.expresion())).append(");");
         
         return sb.toString();
     }
@@ -725,7 +751,7 @@ public String visitCaso_defecto(AnalizadorParserParser.Caso_defectoContext ctx) 
 
         StringBuilder cuerpo = new StringBuilder();
         for (var stmt : ctx.sentencia()) {
-            cuerpo.append("    ").append(visit(stmt)).append("\n");
+            cuerpo.append("   ").append(visit(stmt)).append("\n");
         }
 
         return tipoRetorno + " " + nombreFuncion + "(" + parametros + ") {\n" + cuerpo + "}";

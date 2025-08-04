@@ -1,0 +1,104 @@
+clase Estudiante {
+    privado atributo nombre como texto::
+    privado atributo nota1 como decimal::
+    privado atributo nota2 como decimal::
+    privado atributo nota3 como decimal::
+    privado atributo promedio como decimal::
+    privado atributo estado como texto::
+
+    publico metodo asignar_datos(texto nombre_param, decimal nota_param1, decimal nota_param2, decimal nota_param3) {
+        este.nombre igual a nombre_param::
+        este.nota1 igual a nota_param1::
+        este.nota2 igual a nota_param2::
+        este.nota3 igual a nota_param3::
+        este.promedio igual a (nota_param1 + nota_param2 + nota_param3) / 3::
+
+        si (este.promedio mayor o igual que 70) {
+            este.estado igual a "Aprobado"::
+        }
+        sino {
+            este.estado igual a "Reprobado"::
+        }
+    }
+
+    publico metodo mostrar_info() {
+        mostrar "Estudiante:", este.nombre::
+        mostrar "Promedio:", este.promedio::
+        mostrar "Estado:", este.estado::
+    }
+
+    publico metodo obtener_promedio() retornar decimal {
+        retornar este.promedio::
+    }
+}
+
+funcion evaluar_beca(decimal promedio) retornar texto {
+    si (promedio mayor que 80) {
+        retornar "Beca aprobada"::
+    }
+    sino {
+        retornar "No aplica para beca"::
+    }
+}
+
+comenzar
+    constante como entero LIMITE igual a 3::
+    crear como Estudiante e1, e2, e3::
+    crear como entero i igual a 1::
+    crear como entero salir igual a 0::
+
+    hacer {
+        
+        i igual a 1::
+        mientras (i menor o igual que LIMITE) {
+            crear como texto nombre::
+            crear como decimal b, c, d::
+
+            mostrar "Ingrese el nombre del estudiante ", i, ":":: 
+            leer nombre::
+            mostrar "Ingrese la primera nota:":: leer b::
+            mostrar "Ingrese la segunda nota:":: leer c::
+            mostrar "Ingrese la tercera nota:":: leer d::
+
+            si (i igual que 1) {
+                e1.asignar_datos(nombre, b, c, d)::
+            }
+            sino {
+                si (i igual que 2) {
+                    e2.asignar_datos(nombre, b, c, d)::
+                }
+                sino {
+                    e3.asignar_datos(nombre, b, c, d)::
+                }
+            }
+
+            i igual a i + 1::
+        }
+
+        mostrar "=== INFORMACIÓN DE ESTUDIANTES ==="::
+
+        para (crear j como entero igual a 1:: j menor o igual que LIMITE:: j igual a j + 1) {
+            si (j igual que 1) {
+                e1.mostrar_info()::
+                mostrar "Beca:", evaluar_beca(e1.obtener_promedio()):: 
+            }
+            sino {
+                si (j igual que 2) {
+                    e2.mostrar_info()::
+                    mostrar "Beca:", evaluar_beca(e2.obtener_promedio()):: 
+                }
+                sino {
+                    e3.mostrar_info()::
+                    mostrar "Beca:", evaluar_beca(e3.obtener_promedio()):: 
+                }
+            }
+            mostrar "--------------------"::
+        }
+
+        mostrar "¿Desea salir? (1 = sí / 0 = no):"::
+        leer salir::
+
+    } mientras (salir noes igual a 1)::
+
+
+terminar

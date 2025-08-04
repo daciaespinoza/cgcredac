@@ -1,0 +1,63 @@
+funcion sumar(entero num1, entero num2) retornar entero {
+    retornar num1 + num2::
+}
+
+funcion restar(entero num1, entero num2) retornar entero {
+    retornar num1 - num2::
+}
+
+funcion multiplicar(entero num1, entero num2) retornar entero {
+    retornar num1 * num2::
+}
+
+funcion dividir(entero num1, entero num2) retornar entero {
+    si (num2 igual que 0) {
+        mostrar "No se puede dividir entre 0."::
+        retornar 0::
+    }
+    retornar num1 / num2::
+}
+
+comenzar
+
+    crear como entero opcion igual a 0::
+
+    mientras (opcion noes igual a 5) {
+        mostrar "------ Calculadora ------"::
+        mostrar "1. Sumar"::
+        mostrar "2. Restar"::
+        mostrar "3. Multiplicar"::
+        mostrar "4. Dividir"::
+        mostrar "5. Salir"::
+        mostrar "Ingrese una opción:"::
+        leer opcion::
+
+        si ((opcion mayor o igual que 1) yy (opcion menor o igual que 4)) {
+            crear como entero num1, num2::
+            mostrar "Ingrese el primer número:"::
+            leer num1::
+            mostrar "Ingrese el segundo número:"::
+            leer num2::
+
+            crear como entero resultado::
+
+            segun opcion {
+                caso 1:
+                    resultado igual a sumar(num1, num2)::
+                    romper::
+                caso 2:
+                    resultado igual a restar(num1, num2)::
+                    romper::
+                caso 3:
+                    resultado igual a multiplicar(num1, num2)::
+                    romper::
+                caso 4:
+                    resultado igual a dividir(num1, num2)::
+                    romper::
+            }
+
+            mostrar "Resultado:", resultado::
+        }
+    }
+
+terminar

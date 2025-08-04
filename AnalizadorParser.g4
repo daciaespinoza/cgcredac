@@ -8,7 +8,7 @@ programa:
 // Reglas para las diferentes sentencia* ejecutables de CREDAC.
 sentencia:
     'mostrar' lista_mostrar '::'
-    | 'leer' ID '::'
+    | 'leer' (ID | acceso_objeto) '::'
     | 'mientras' '(' expresion ')' '{' sentencia* '}'
     | sentencia_si
     | ID 'igual' 'a' expresion'::'
@@ -24,6 +24,11 @@ sentencia:
     | declaracion
     ;
 
+lista_mostrar:
+    expresion (',' expresion)*
+    ;
+
+// Reglas para las sentencias condicionales, 'si' y 'sino'.
 sentencia_si:
     'si' '(' expresion ')' '{' siBlock=sentencias'}' #siOnly
     | 'si' '(' expresion ')' '{' siBlock=sentencias '}' 'sino' '{' sinoBlock=sentencias '}' #sinoOnly
@@ -35,7 +40,7 @@ declaracion:
     'crear' 'como' tipo id_item (',' id_item)*  '::'
     | 'constante' 'como' tipo CONSTANTEID 'igual' 'a' expresion '::'
     ;
-    
+
 id_item:
     ID
     | ID 'igual' 'a' expresion
@@ -57,11 +62,6 @@ tipo:
     | ID
     ;
 
-lista_mostrar:
-    expresion
-    | lista_mostrar ',' expresion
-    ;
-
 // Reglas para construir cualquier tipo de expresión, aritmética, lógica o de acceso.
 expresion:
     NUMENTERO
@@ -79,6 +79,7 @@ expresion:
     | llamada_metodo
     | llamada_funcion
     | '[' lista_expresiones ']'
+    | CONSTANTEID
     ;
 
 lista_expresiones_opt:
@@ -115,9 +116,6 @@ caso_defecto:
     | 'caso' 'otro' ':' sentencia* 'romper' '::'
     ;
 
-
-
-
 // Estructura del ciclo hacer-mientras, que ejecuta al menos una vez.
 hacer_mientras_sentencia:
     'hacer' '{' sentencia* '}' 'mientras' '(' expresion ')' '::'
@@ -149,12 +147,12 @@ llamada_funcion:
     ID '(' lista_expresiones_opt ')'
     ;
 
-// Definición de clases, incluyendo herencia y miembro+.
+// Definición de clases, incluyendo herencia y miembro.
 clase: 'clase' ID '{' miembro+ '}';
 
 miembro:
     visibilidad 'atributo' ID 'como' tipo '::'
-    | visibilidad 'atributo' ID 'como' tipo ('igual' 'a') expresion '::'
+    | visibilidad 'atributo' ID 'como' tipo 'igual' 'a' expresion '::'
     | visibilidad 'metodo' ID '(' parametros_opt ')' tipo_retorno '{' sentencia* '}'
     ;
 

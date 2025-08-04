@@ -1,0 +1,22 @@
+comenzar
+    crear como entero secreto igual a 7::
+    crear como entero intento igual a 0::
+    
+    mostrar "Adivina el número secreto entre 1 y 10!"::
+
+    hacer {
+        mostrar "Ingresa tu intento:"::
+        leer intento::
+
+        si (intento menor que secreto) {
+            mostrar "Muy bajo. Intenta de nuevo."::
+        }
+        sino {
+            si (intento mayor que secreto) {
+                mostrar "Muy alto. Intenta de nuevo."::
+            }
+        }
+    } mientras (intento noes igual a secreto)::
+
+    mostrar "¡Correcto! El número era:", secreto::
+terminar

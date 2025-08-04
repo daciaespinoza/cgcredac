@@ -1,0 +1,26 @@
+clase Estudiante {
+    publico atributo nombre como texto::
+    publico atributo nota como decimal::
+
+    publico metodo mostrar_estado() {
+        mostrar "Estudiante:", este.nombre::
+        si (este.nota mayor o igual que 65) {
+            mostrar "Estado: Aprobado"::
+        }
+        sino {
+            mostrar "Estado: Reprobado"::
+        }
+    }
+}
+
+comenzar
+    crear como Estudiante e1::
+
+    mostrar "Ingrese el nombre del estudiante:"::
+    leer e1.nombre::
+
+    mostrar "Ingrese la nota del estudiante:"::
+    leer e1.nota::
+
+    e1.mostrar_estado()::
+terminar

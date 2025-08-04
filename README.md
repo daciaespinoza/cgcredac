@@ -1,6 +1,6 @@
 # CREDAC
 
-![CREDAC Logo](logo.jpeg)
+![CREDAC Logo](Logo.jpeg)
 
 CREDAC es un lenguaje de programación personalizado desarrollado con ANTLR4 que permite escribir código que se traduce automáticamente a C++ para su compilación y ejecución.
 

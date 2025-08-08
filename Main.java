@@ -4,7 +4,7 @@ import java.nio.file.*;
 
 public class Main {
     public static void main(String[] args) throws Exception {
-        // Cambiar el nombre del archivo de entrada según tu caso
+        // Archivo de entrada
         String inputFile = "ejemplo.dec"; 
         if (args.length > 0) {
             inputFile = args[0];
@@ -40,10 +40,9 @@ public class Main {
         String output = generator.visit(tree);
         
         // Escribir archivo de salida
-        String outputFile = inputFile.replaceAll("\\.[^.]*$", ".cpp");
-        Files.write(Paths.get(outputFile), output.getBytes());
-        System.out.println("======================");
+        Files.write(Paths.get("salida.cpp"), output.getBytes());
+        System.out.println("======================================");
         System.out.println("Generado exitosamente en lenguaje C++!");
-        System.out.println("======================");
+        System.out.println("======================================");
     }
 }

@@ -279,9 +279,10 @@ terminar
 ## 🚨 Solución de problemas comunes
 
 ### ❌ Error: "g++ no se reconoce como comando"
-**Solución:** Java no está instalado o no está en el PATH
-- Instala JDK 21 o superior
-- Verifica con: `java -version`
+**Solución:** g++ no está instalado
+- **Windows:** Instala MinGW o usa Git Bash
+- **Linux:** `sudo apt install g++`
+- **macOS:** `xcode-select --install`
 
 ### ❌ Error: "Permission denied" al ejecutar ./ejecutar.sh
 **Solución:** El archivo no tiene permisos de ejecución
@@ -294,10 +295,6 @@ chmod +x ejecutar.sh
 - Instala JDK 21 o superior
 - Verifica con: `java -version`
 
-**Solución:** g++ no está instalado
-- **Windows:** Instala MinGW o usa Git Bash
-- **Linux:** `sudo apt install g++`
-- **macOS:** `xcode-select --install`
 ### ❌ Error: "No such file ejemplo.dec"
 **Solución:** 
 - Asegúrate de que tu archivo se llame exactamente `ejemplo.dec`
@@ -351,12 +348,6 @@ cgcredac/
 - 🔧 **Compilación automática** con un solo comando
 - 🇪🇸 **Sintaxis en español** fácil de entender
 - 📏 **Reglas de estilo claras** para código consistente
-
-## 🤝 ¿Necesitas ayuda?
-
-- 🐛 **Reportar problemas:** [Abrir issue](https://github.com/daciaespinoza/cgcredac/issues)
-- 💡 **Sugerencias:** Usa las issues del repositorio
-- 📖 **Más ejemplos:** Próximamente disponibles
 
 ## 👥 Autores
 
